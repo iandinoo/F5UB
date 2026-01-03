@@ -1,6 +1,7 @@
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from modules.database import *
+from modules.database import get_setting
 from modules.utils import generate_link
 from config import OWNER_ID
 
