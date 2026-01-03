@@ -50,5 +50,5 @@ def register_handlers(app):
                 success += 1
             except:
                 failed += 1
-        await message.reply(f"Broadcast selesai ✅\\nTerkirim: {success}\\nGagal: {failed}")
-                    
+        await message.reply(f"Broadcast selesai ✅\nTerkirim: {success}\nGagal: {failed}")
+                
