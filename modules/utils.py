@@ -6,4 +6,4 @@ def format_users(users):
 
 def format_admins(admins):
     return "\n".join([str(a["_id"]) for a in admins])
-  
+    
