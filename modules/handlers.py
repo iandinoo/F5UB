@@ -6,12 +6,10 @@ from config import OWNER_ID
 
 def register_handlers(app):
 
-    # /start
     @app.on_message(filters.command("start"))
     async def start(client, message):
         user_id = message.from_user.id
         add_user(user_id)
-
         start_text = get_setting("start_text") or "Selamat datang di File Sharing Bot!"
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("⚙️ Pengaturan", callback_data="admin_panel")],
@@ -19,12 +17,10 @@ def register_handlers(app):
         ])
         await message.reply(start_text, reply_markup=keyboard)
 
-    # Channel post → save file
     @app.on_message(filters.channel)
     async def channel_post(client, message):
         add_file(message.chat.id, message.message_id)
 
-    # Admin Panel Inline
     @app.on_callback_query()
     async def admin_panel(client, query):
         data = query.data
@@ -39,7 +35,6 @@ def register_handlers(app):
             ])
             await query.message.edit_text("Admin Panel:", reply_markup=keyboard)
 
-    # Broadcast command
     @app.on_message(filters.command("gcast"))
     async def gcast(client, message):
         if message.from_user.id not in [a["_id"] for a in get_admins()]:
@@ -55,5 +50,5 @@ def register_handlers(app):
                 success += 1
             except:
                 failed += 1
-        await message.reply(f"Broadcast selesai ✅\nTerkirim: {success}\nGagal: {failed}")
+        await message.reply(f"Broadcast selesai ✅\\nTerkirim: {success}\\nGagal: {failed}")
                     
