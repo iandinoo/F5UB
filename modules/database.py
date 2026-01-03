@@ -40,4 +40,3 @@ def remove_forcesub(chat_id):
 
 def get_forcesubs():
     return list(db.forcesub.find())
-    
