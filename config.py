@@ -1,12 +1,12 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # load .env otomatis
+load_dotenv()
 
-def _int(name, default=0):
+def _int(key, default=0):
     try:
-        return int(os.getenv(name, default))
-    except ValueError:
+        return int(os.getenv(key, default))
+    except:
         return default
 
 API_ID = _int("API_ID")
