@@ -1,6 +1,5 @@
-import random
-import string
+import secrets
 
-def generate_code(length=8):
-    return "".join(random.choices(string.ascii_letters + string.digits, k=length))
+def generate_token():
+    return secrets.token_urlsafe(16)
     
