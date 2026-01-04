@@ -1,19 +1,21 @@
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
-
-def must_env(key):
-    value = os.getenv(key)
-    if not value:
+def must_env(key: str, cast=str):
+    val = os.getenv(key)
+    if val is None or val == "":
         raise RuntimeError(f"ENV {key} belum diisi")
-    return value
+    return cast(val)
 
-API_ID = int(must_env("API_ID"))
+API_ID = must_env("API_ID", int)
 API_HASH = must_env("API_HASH")
 BOT_TOKEN = must_env("BOT_TOKEN")
 
-OWNER_ID = int(must_env("OWNER_ID"))
-DATABASE_CHAT_ID = int(must_env("DATABASE_CHAT_ID"))
+OWNER_ID = must_env("OWNER_ID", int)
+DATABASE_CHAT_ID = must_env("DATABASE_CHAT_ID", int)
 
 MONGODB_URL = must_env("MONGODB_URL")
+
+FORCE_SUB_CHANNELS = [
+    int(x) for x in os.getenv("FORCE_SUB_CHANNELS", "").split()
+    if x.strip()
+]
