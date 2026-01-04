@@ -1,12 +1,20 @@
-from modules.database import get_force_subs
+from pyrogram.enums import ChatMemberStatus
+from config import FORCE_SUB_CHANNELS
 
 async def check_force_sub(client, user_id):
-    for chat_id in get_force_subs():
+    not_joined = []
+
+    for chat_id in FORCE_SUB_CHANNELS:
         try:
             member = await client.get_chat_member(chat_id, user_id)
-            if member.status in ["left", "kicked"]:
-                return False
+            if member.status not in (
+                ChatMemberStatus.MEMBER,
+                ChatMemberStatus.ADMINISTRATOR,
+                ChatMemberStatus.OWNER
+            ):
+                not_joined.append(chat_id)
         except:
-            return False
-    return True
-  
+            not_joined.append(chat_id)
+
+    return not_joined
+    
