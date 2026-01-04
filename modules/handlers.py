@@ -1,60 +1,57 @@
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from config import OWNER_ID, DATABASE_CHAT_ID
-from modules.database import *
+from modules.database import get_file, get_setting
 from modules.force_sub import check_force_sub
-from modules.utils import generate_code
-
 
 def register_handlers(app):
 
     @app.on_message(filters.command("start"))
     async def start(client, message):
-        user_id = message.from_user.id
-        save_user(user_id)
+        if len(message.command) == 1:
+            text = get_setting("start_text") or "Selamat datang di File Sharing Bot!"
+            return await message.reply(text)
 
-        start_text = get_setting("start_text") or "Selamat datang di File Sharing Bot!"
+        token = message.command[1]
+        file_data = get_file(token)
 
-        if len(message.command) > 1:
-            code = message.command[1]
-            msg_id = get_file(code)
-            if not msg_id:
-                return await message.reply("❌ File tidak ditemukan.")
+        if not file_data:
+            return await message.reply("Link tidak valid.")
 
-            if not await check_force_sub(client, user_id):
-                buttons = []
-                for cid in get_force_subs():
-                    chat = await client.get_chat(cid)
-                    buttons.append([InlineKeyboardButton(
-                        f"Join {chat.title}", url=chat.invite_link
-                    )])
-                buttons.append([InlineKeyboardButton("🔄 Coba Lagi", callback_data=f"retry_{code}")])
+        not_joined = await check_force_sub(client, message.from_user.id)
 
-                return await message.reply(
-                    "⚠️ Silakan join dulu channel/group:",
-                    reply_markup=InlineKeyboardMarkup(buttons)
-                )
+        if not_joined:
+            buttons = [
+                [InlineKeyboardButton("Join Channel", url=f"https://t.me/c/{abs(cid)}")]
+                for cid in not_joined
+            ]
+            buttons.append([
+                InlineKeyboardButton("🔄 Coba Lagi", callback_data=f"retry_{token}")
+            ])
 
-            protect = get_setting("protect") or False
-            return await client.copy_message(
-                message.chat.id,
-                DATABASE_CHAT_ID,
-                msg_id,
-                protect_content=protect
+            return await message.reply(
+                "Silakan join semua channel terlebih dahulu.",
+                reply_markup=InlineKeyboardMarkup(buttons)
             )
 
-        await message.reply(start_text, reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("👤 Profil Owner", url=f"https://t.me/{OWNER_ID}")]
-        ]))
+        await client.send_cached_media(
+            chat_id=message.chat.id,
+            file_id=file_data["file_id"],
+            protect_content=True
+        )
 
+    @app.on_callback_query(filters.regex("^retry_"))
+    async def retry(client, callback):
+        token = callback.data.split("_", 1)[1]
+        not_joined = await check_force_sub(client, callback.from_user.id)
 
-    @app.on_message(filters.private & filters.media & filters.user([OWNER_ID] + get_admins()))
-    async def upload(client, message):
-        code = generate_code()
-        sent = await message.copy(DATABASE_CHAT_ID)
-        save_file(code, sent.id)
-
-        await message.reply(
-            f"✅ File tersimpan\n\n🔗 Link:\nhttps://t.me/{client.me.username}?start={code}"
-                )
-            
+        if not not_joined:
+            file_data = get_file(token)
+            await callback.message.delete()
+            await client.send_cached_media(
+                callback.message.chat.id,
+                file_data["file_id"],
+                protect_content=True
+            )
+        else:
+            await callback.answer("Masih belum join semua channel.", show_alert=True)
+        
