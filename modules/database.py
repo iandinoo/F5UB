@@ -2,28 +2,28 @@ from pymongo import MongoClient
 from config import MONGODB_URL
 
 client = MongoClient(MONGODB_URL)
-db = client["f5ub"]
+db = client["filesharingbot"]
 
-files_col = db["files"]
-settings_col = db["settings"]
+users = db.users
+files = db.files
+settings = db.settings
+admins = db.admins
+forcesub = db.forcesub
 
-def save_file(token, file_id):
-    files_col.insert_one({
-        "token": token,
-        "file_id": file_id
-    })
 
-def get_file(token):
-    return files_col.find_one({"token": token})
+def add_user(user_id: int):
+    users.update_one({"_id": user_id}, {"$set": {"_id": user_id}}, upsert=True)
 
-def get_setting(key):
-    data = settings_col.find_one({"key": key})
-    return data["value"] if data else None
+
+def get_users():
+    return [u["_id"] for u in users.find()]
+
 
 def set_setting(key, value):
-    settings_col.update_one(
-        {"key": key},
-        {"$set": {"value": value}},
-        upsert=True
-    )
+    settings.update_one({"_id": key}, {"$set": {"value": value}}, upsert=True)
+
+
+def get_setting(key, default=None):
+    d = settings.find_one({"_id": key})
+    return d["value"] if d else default
     
