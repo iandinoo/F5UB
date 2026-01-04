@@ -1,38 +1,37 @@
-# File Sharing Bot Telegram
+# File Sharing Bot (FINAL)
 
-Bot untuk menyimpan file ke database channel dan membuat link otomatis.
-
----
-
-## 📦 Fitur
-- Simpan file (dokumen, foto, video, audio) ke database channel
-- Membuat link file otomatis
-- Inline button admin panel:
-  - ⚙️ Pengaturan → Admin Panel
-  - 👤 Owner → langsung ke akun owner
-  - 🛡 Force Sub, 📝 Start Text, 🔒 Protect Content, 📢 Broadcast, 👥 Users, 👤 Admins
-- Broadcast ke semua user (hanya owner/admin)
-- Protect konten untuk mencegah forward/download
-- Daftar user & admin di MongoDB
-- Support deploy Docker & manual GitHub
-- Support `.env` untuk konfigurasi mudah
+## Fitur
+- Upload file oleh Admin/Owner
+- Auto simpan ke Database Channel
+- Generate link download
+- Force Subscribe unlimited
+- Protect Content ON/OFF
+- Inline Button
+- Broadcast (/gcast)
+- Docker & Manual Deploy
 
 ---
 
-## 🚀 Deploy Docker
-1. Update & install docker
+## Deploy Manual
 ```bash
-apt -y update; apt -y install docker.io
-docker login -u username -p token
-docker run -d --name filesharingbot \
---env-file .env \
-username/tag
-docker logs -f filesharingbot
-🖥 Deploy Manual GitHub
-screen -S filesharingbot
-git clone https://github.com/iandinoo/F5UB.git
+apt update
+apt install python3 python3-pip -y
+git clone REPO
 cd F5UB
-cp .env.example .env
-nano .env
 pip install -r requirements.txt
+nano .env
 python3 start.py
+
+## Deploy Docker
+apt -y update; apt -y install docker.io
+docker login -u USERNAME -p TOKEN
+
+docker run -d \
+--name filesharingbot \
+--env API_ID= \
+--env API_HASH= \
+--env BOT_TOKEN= \
+--env OWNER_ID= \
+--env DATABASE_CHAT_ID= \
+--env MONGODB_URL= \
+username/repo:tag
