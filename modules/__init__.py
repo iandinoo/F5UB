@@ -1,1 +1,1 @@
-# DO NOT PUT ANYTHING HERE
+# init file (wajib ada)
