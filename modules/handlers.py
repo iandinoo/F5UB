@@ -1,55 +1,60 @@
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from config import OWNER_ID, DATABASE_CHAT_ID
 from modules.database import *
-from modules.database import get_setting
-from modules.utils import generate_link
-from config import OWNER_ID
+from modules.force_sub import check_force_sub
+from modules.utils import generate_code
+
 
 def register_handlers(app):
 
     @app.on_message(filters.command("start"))
     async def start(client, message):
         user_id = message.from_user.id
-        add_user(user_id)
+        save_user(user_id)
+
         start_text = get_setting("start_text") or "Selamat datang di File Sharing Bot!"
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("⚙️ Pengaturan", callback_data="admin_panel")],
-            [InlineKeyboardButton("👤 Owner", url=f"https://t.me/{OWNER_ID}")]
-        ])
-        await message.reply(start_text, reply_markup=keyboard)
 
-    @app.on_message(filters.channel)
-    async def channel_post(client, message):
-        add_file(message.chat.id, message.message_id)
+        if len(message.command) > 1:
+            code = message.command[1]
+            msg_id = get_file(code)
+            if not msg_id:
+                return await message.reply("❌ File tidak ditemukan.")
 
-    @app.on_callback_query()
-    async def admin_panel(client, query):
-        data = query.data
-        if data == "admin_panel":
-            keyboard = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🛡 Force Sub", callback_data="force_sub")],
-                [InlineKeyboardButton("📝 Start Text", callback_data="start_text")],
-                [InlineKeyboardButton("🔒 Protect Content", callback_data="protect")],
-                [InlineKeyboardButton("📢 Broadcast", callback_data="broadcast")],
-                [InlineKeyboardButton("👥 Users", callback_data="users")],
-                [InlineKeyboardButton("👤 Admins", callback_data="admins")]
-            ])
-            await query.message.edit_text("Admin Panel:", reply_markup=keyboard)
+            if not await check_force_sub(client, user_id):
+                buttons = []
+                for cid in get_force_subs():
+                    chat = await client.get_chat(cid)
+                    buttons.append([InlineKeyboardButton(
+                        f"Join {chat.title}", url=chat.invite_link
+                    )])
+                buttons.append([InlineKeyboardButton("🔄 Coba Lagi", callback_data=f"retry_{code}")])
 
-    @app.on_message(filters.command("gcast"))
-    async def gcast(client, message):
-        if message.from_user.id not in [a["_id"] for a in get_admins()]:
-            return
-        if not message.reply_to_message:
-            await message.reply("Reply pesan yang ingin di-broadcast.")
-            return
-        users = get_users()
-        success, failed = 0, 0
-        for u in users:
-            try:
-                await client.send_message(u["_id"], message.reply_to_message.text)
-                success += 1
-            except:
-                failed += 1
-        await message.reply(f"Broadcast selesai ✅\nTerkirim: {success}\nGagal: {failed}")
-                
+                return await message.reply(
+                    "⚠️ Silakan join dulu channel/group:",
+                    reply_markup=InlineKeyboardMarkup(buttons)
+                )
+
+            protect = get_setting("protect") or False
+            return await client.copy_message(
+                message.chat.id,
+                DATABASE_CHAT_ID,
+                msg_id,
+                protect_content=protect
+            )
+
+        await message.reply(start_text, reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("👤 Profil Owner", url=f"https://t.me/{OWNER_ID}")]
+        ]))
+
+
+    @app.on_message(filters.private & filters.media & filters.user([OWNER_ID] + get_admins()))
+    async def upload(client, message):
+        code = generate_code()
+        sent = await message.copy(DATABASE_CHAT_ID)
+        save_file(code, sent.id)
+
+        await message.reply(
+            f"✅ File tersimpan\n\n🔗 Link:\nhttps://t.me/{client.me.username}?start={code}"
+                )
+            
